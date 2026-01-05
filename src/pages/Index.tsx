@@ -11,8 +11,8 @@ import {
   Candidate 
 } from "@/lib/firebase";
 
-// Voting ends at the end of January 15, 2025
-const VOTING_END_DATE = new Date("2025-01-15T23:59:59");
+// Voting ends at the end of January 15, 2026
+const VOTING_END_DATE = new Date("2026-01-15T23:59:59");
 
 const Index = () => {
   const [starCandidates, setStarCandidates] = useState<Candidate[]>([]);
