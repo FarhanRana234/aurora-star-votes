@@ -27,8 +27,8 @@ const Index = () => {
 
   // Subscribe to real-time candidate updates
   useEffect(() => {
-    const unsubStar = subscribeToCandidates("star", setStarCandidates);
-    const unsubVendor = subscribeToCandidates("vendor", setVendorCandidates);
+    const unsubStar = subscribeToCandidates("stars", setStarCandidates);
+    const unsubVendor = subscribeToCandidates("vendors", setVendorCandidates);
 
     return () => {
       unsubStar();

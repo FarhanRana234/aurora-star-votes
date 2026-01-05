@@ -105,9 +105,6 @@ const VotingCard = ({
                     <h3 className="font-display font-semibold text-lg text-foreground">
                       {candidate.name}
                     </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {candidate.description}
-                    </p>
                     <p className="text-xs text-gold mt-1 font-medium">
                       {candidate.votes || 0} votes ({votePercentage}%)
                     </p>
