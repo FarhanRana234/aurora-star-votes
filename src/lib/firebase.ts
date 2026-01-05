@@ -1,78 +1,57 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, onSnapshot } from 'firebase/firestore';
+import { getFirestore, collection, doc, getDocs, updateDoc, increment, onSnapshot, query, where } from 'firebase/firestore';
 
-// Firebase configuration - these are publishable keys
+// Firebase configuration
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || '',
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || '',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || '',
+  apiKey: "AIzaSyAWX7YAv0aD3xqA417IZ6y-MtU8-DpIVRQ",
+  authDomain: "aurora-awards-by-fj.firebaseapp.com",
+  projectId: "aurora-awards-by-fj",
+  storageBucket: "aurora-awards-by-fj.firebasestorage.app",
+  messagingSenderId: "938893054490",
+  appId: "1:938893054490:web:5653001eb1165e7c3d37a3",
+  measurementId: "G-XTYN7STM6Z"
 };
 
-// Check if Firebase is configured
-export const isFirebaseConfigured = () => {
-  return firebaseConfig.apiKey && firebaseConfig.projectId;
-};
-
-// Initialize Firebase only if configured
-let app: ReturnType<typeof initializeApp> | null = null;
-let db: ReturnType<typeof getFirestore> | null = null;
-
-if (isFirebaseConfigured()) {
-  app = initializeApp(firebaseConfig);
-  db = getFirestore(app);
-}
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 export { db };
 
-// Vote types
+// Candidate type matching Firestore structure
 export interface Candidate {
   id: string;
   name: string;
   description: string;
-  image?: string;
+  image: string;
+  category: string;
+  votes: number;
 }
 
-export interface VoteData {
-  [candidateId: string]: number;
-}
-
-// Firestore operations
-export const getVotes = async (category: string): Promise<VoteData> => {
-  if (!db) return {};
-  
+// Fetch candidates by category
+export const getCandidates = async (category: string): Promise<Candidate[]> => {
   try {
-    const docRef = doc(db, 'votes', category);
-    const docSnap = await getDoc(docRef);
+    const candidatesRef = collection(db, 'candidates');
+    const q = query(candidatesRef, where('category', '==', category));
+    const querySnapshot = await getDocs(q);
     
-    if (docSnap.exists()) {
-      return docSnap.data() as VoteData;
-    }
-    return {};
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    } as Candidate));
   } catch (error) {
-    console.error('Error getting votes:', error);
-    return {};
+    console.error('Error getting candidates:', error);
+    return [];
   }
 };
 
-export const castVote = async (category: string, candidateId: string): Promise<boolean> => {
-  if (!db) return false;
-  
+// Cast vote for a candidate
+export const castVote = async (candidateId: string): Promise<boolean> => {
   try {
-    const docRef = doc(db, 'votes', category);
-    const docSnap = await getDoc(docRef);
-    
-    if (docSnap.exists()) {
-      await updateDoc(docRef, {
-        [candidateId]: increment(1)
-      });
-    } else {
-      await setDoc(docRef, {
-        [candidateId]: 1
-      });
-    }
+    const candidateRef = doc(db, 'candidates', candidateId);
+    await updateDoc(candidateRef, {
+      votes: increment(1)
+    });
     return true;
   } catch (error) {
     console.error('Error casting vote:', error);
@@ -80,21 +59,20 @@ export const castVote = async (category: string, candidateId: string): Promise<b
   }
 };
 
-export const subscribeToVotes = (
-  category: string, 
-  callback: (votes: VoteData) => void
+// Subscribe to candidates by category for real-time updates
+export const subscribeToCandidates = (
+  category: string,
+  callback: (candidates: Candidate[]) => void
 ): (() => void) => {
-  if (!db) {
-    callback({});
-    return () => {};
-  }
+  const candidatesRef = collection(db, 'candidates');
   
-  const docRef = doc(db, 'votes', category);
-  return onSnapshot(docRef, (docSnap) => {
-    if (docSnap.exists()) {
-      callback(docSnap.data() as VoteData);
-    } else {
-      callback({});
-    }
+  return onSnapshot(candidatesRef, (snapshot) => {
+    const candidates = snapshot.docs
+      .map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as Candidate))
+      .filter(c => c.category === category);
+    callback(candidates);
   });
 };
