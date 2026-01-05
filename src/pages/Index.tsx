@@ -3,31 +3,15 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 import Header from "@/components/Header";
 import VotingCard from "@/components/VotingCard";
-import FirebaseSetup from "@/components/FirebaseSetup";
 import { 
-  isFirebaseConfigured, 
   castVote, 
-  subscribeToVotes,
-  VoteData 
+  subscribeToCandidates,
+  Candidate 
 } from "@/lib/firebase";
 
-// Demo candidates data
-const starCandidates = [
-  { id: "star1", name: "Sarah Mitchell", description: "Outstanding team leadership" },
-  { id: "star2", name: "James Rodriguez", description: "Exceptional client relations" },
-  { id: "star3", name: "Emily Chen", description: "Innovation in project delivery" },
-];
-
-const vendorCandidates = [
-  { id: "vendor1", name: "Stellar Catering Co.", description: "Premium event cuisine" },
-  { id: "vendor2", name: "Aurora Decor Studio", description: "Stunning visual designs" },
-  { id: "vendor3", name: "Harmony Sound Systems", description: "Professional audio excellence" },
-];
-
 const Index = () => {
-  const [isFirebaseConnected] = useState(isFirebaseConfigured());
-  const [starVotes, setStarVotes] = useState<VoteData>({});
-  const [vendorVotes, setVendorVotes] = useState<VoteData>({});
+  const [starCandidates, setStarCandidates] = useState<Candidate[]>([]);
+  const [vendorCandidates, setVendorCandidates] = useState<Candidate[]>([]);
   const [isVotingStar, setIsVotingStar] = useState(false);
   const [isVotingVendor, setIsVotingVendor] = useState(false);
   const [votedStar, setVotedStar] = useState<string | null>(null);
@@ -41,27 +25,20 @@ const Index = () => {
     if (savedVendorVote) setVotedVendor(savedVendorVote);
   }, []);
 
-  // Subscribe to real-time vote updates
+  // Subscribe to real-time candidate updates
   useEffect(() => {
-    if (!isFirebaseConnected) return;
-
-    const unsubStar = subscribeToVotes("star_of_month", setStarVotes);
-    const unsubVendor = subscribeToVotes("vendor_of_month", setVendorVotes);
+    const unsubStar = subscribeToCandidates("star", setStarCandidates);
+    const unsubVendor = subscribeToCandidates("vendor", setVendorCandidates);
 
     return () => {
       unsubStar();
       unsubVendor();
     };
-  }, [isFirebaseConnected]);
+  }, []);
 
   const handleStarVote = async (candidateId: string) => {
-    if (!isFirebaseConnected) {
-      toast.error("Firebase not connected. Please configure your Firebase credentials.");
-      return;
-    }
-
     setIsVotingStar(true);
-    const success = await castVote("star_of_month", candidateId);
+    const success = await castVote(candidateId);
     
     if (success) {
       setVotedStar(candidateId);
@@ -77,13 +54,8 @@ const Index = () => {
   };
 
   const handleVendorVote = async (candidateId: string) => {
-    if (!isFirebaseConnected) {
-      toast.error("Firebase not connected. Please configure your Firebase credentials.");
-      return;
-    }
-
     setIsVotingVendor(true);
-    const success = await castVote("vendor_of_month", candidateId);
+    const success = await castVote(candidateId);
     
     if (success) {
       setVotedVendor(candidateId);
@@ -97,17 +69,6 @@ const Index = () => {
     
     setIsVotingVendor(false);
   };
-
-  // Merge votes with candidates
-  const starWithVotes = starCandidates.map(c => ({
-    ...c,
-    votes: starVotes[c.id] || 0
-  }));
-
-  const vendorWithVotes = vendorCandidates.map(c => ({
-    ...c,
-    votes: vendorVotes[c.id] || 0
-  }));
 
   return (
     <div className="min-h-screen bg-background">
@@ -139,13 +100,6 @@ const Index = () => {
         </motion.p>
       </motion.section>
 
-      {/* Firebase Setup Notice */}
-      {!isFirebaseConnected && (
-        <section className="px-4 mb-12">
-          <FirebaseSetup />
-        </section>
-      )}
-
       {/* Voting Categories */}
       <section className="px-4 pb-16">
         <div className="container mx-auto">
@@ -159,22 +113,20 @@ const Index = () => {
               title="Star of the Month"
               subtitle="Celebrate outstanding team members"
               icon="star"
-              candidates={starWithVotes}
+              candidates={starCandidates}
               onVote={handleStarVote}
               isVoting={isVotingStar}
               votedFor={votedStar}
-              isFirebaseConnected={isFirebaseConnected}
             />
 
             <VotingCard
               title="Vendor of the Month"
               subtitle="Recognize our best partners"
               icon="trophy"
-              candidates={vendorWithVotes}
+              candidates={vendorCandidates}
               onVote={handleVendorVote}
               isVoting={isVotingVendor}
               votedFor={votedVendor}
-              isFirebaseConnected={isFirebaseConnected}
             />
           </motion.div>
         </div>
