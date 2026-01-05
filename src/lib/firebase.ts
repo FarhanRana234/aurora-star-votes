@@ -22,17 +22,16 @@ export { db };
 export interface Candidate {
   id: string;
   name: string;
-  description: string;
   image: string;
-  category: string;
+  type: string;
   votes: number;
 }
 
-// Fetch candidates by category
-export const getCandidates = async (category: string): Promise<Candidate[]> => {
+// Fetch candidates by type
+export const getCandidates = async (type: string): Promise<Candidate[]> => {
   try {
     const candidatesRef = collection(db, 'candidates');
-    const q = query(candidatesRef, where('category', '==', category));
+    const q = query(candidatesRef, where('type', '==', type));
     const querySnapshot = await getDocs(q);
     
     return querySnapshot.docs.map(doc => ({
@@ -59,9 +58,9 @@ export const castVote = async (candidateId: string): Promise<boolean> => {
   }
 };
 
-// Subscribe to candidates by category for real-time updates
+// Subscribe to candidates by type for real-time updates
 export const subscribeToCandidates = (
-  category: string,
+  type: string,
   callback: (candidates: Candidate[]) => void
 ): (() => void) => {
   const candidatesRef = collection(db, 'candidates');
@@ -72,7 +71,7 @@ export const subscribeToCandidates = (
         id: doc.id,
         ...doc.data()
       } as Candidate))
-      .filter(c => c.category === category);
+      .filter(c => c.type === type);
     callback(candidates);
   });
 };
