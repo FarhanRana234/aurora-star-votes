@@ -12,9 +12,8 @@ import {
   Candidate 
 } from "@/lib/firebase";
 
-// Voting period: Jan 10, 2026 1:00 AM to Jan 11, 2026 1:00 AM
-const VOTING_START_DATE = new Date("2026-01-10T01:00:00");
-const VOTING_END_DATE = new Date("2026-01-11T01:00:00");
+// Voting ends at the end of January 10, 2026
+const VOTING_END_DATE = new Date("2026-01-10T23:59:59");
 
 const Index = () => {
   const [starCandidates, setStarCandidates] = useState<Candidate[]>([]);
@@ -24,16 +23,11 @@ const Index = () => {
   const [votedStar, setVotedStar] = useState<string | null>(null);
   const [votedVendor, setVotedVendor] = useState<string | null>(null);
   const [votingEnded, setVotingEnded] = useState(false);
-  const [votingStarted, setVotingStarted] = useState(false);
 
-  // Check voting status
+  // Check if voting has already ended
   useEffect(() => {
-    const now = new Date();
-    if (now >= VOTING_END_DATE) {
+    if (new Date() >= VOTING_END_DATE) {
       setVotingEnded(true);
-      setVotingStarted(true);
-    } else if (now >= VOTING_START_DATE) {
-      setVotingStarted(true);
     }
   }, []);
 
@@ -72,10 +66,6 @@ const Index = () => {
   }, [vendorCandidates]);
 
   const handleStarVote = async (candidateId: string) => {
-    if (!votingStarted) {
-      toast.error("Voting hasn't started yet!");
-      return;
-    }
     if (votingEnded) {
       toast.error("Voting has ended!");
       return;
@@ -104,10 +94,6 @@ const Index = () => {
   };
 
   const handleVendorVote = async (candidateId: string) => {
-    if (!votingStarted) {
-      toast.error("Voting hasn't started yet!");
-      return;
-    }
     if (votingEnded) {
       toast.error("Voting has ended!");
       return;
@@ -139,10 +125,6 @@ const Index = () => {
     setVotingEnded(true);
   };
 
-  const handleVotingStart = () => {
-    setVotingStarted(true);
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -162,8 +144,6 @@ const Index = () => {
         >
           {votingEnded ? (
             <>And The <span className="text-gold-gradient">Winners</span> Are...</>
-          ) : !votingStarted ? (
-            <>Voting <span className="text-gold-gradient">Coming Soon</span></>
           ) : (
             <>Cast Your <span className="text-gold-gradient">Vote</span></>
           )}
@@ -176,88 +156,67 @@ const Index = () => {
         >
           {votingEnded 
             ? "Thank you for participating! Here are the winners of this month's awards."
-            : !votingStarted
-            ? "The voting period will begin soon. Get ready to recognize excellence in our community!"
             : "Recognize excellence in our community. Vote for your Star of the Month and Vendor of the Month to celebrate outstanding achievements."
           }
         </motion.p>
 
-        {/* Countdown Timer - only show when voting has started */}
-        {votingStarted && (
-          <Countdown targetDate={VOTING_END_DATE} onComplete={handleVotingComplete} />
-        )}
+        {/* Countdown Timer */}
+        <Countdown targetDate={VOTING_END_DATE} onComplete={handleVotingComplete} />
       </motion.section>
 
-      {/* Pre-voting countdown */}
-      {!votingStarted && (
-        <section className="px-4 pb-16">
-          <div className="container mx-auto text-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+      {/* Voting Categories or Winners */}
+      <section className="px-4 pb-16">
+        <div className="container mx-auto">
+          {votingEnded ? (
+            /* Winners Display */
+            <motion.div 
+              className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.5 }}
             >
-              <Countdown targetDate={VOTING_START_DATE} onComplete={handleVotingStart} />
+              <WinnerCard
+                title="Star of the Month"
+                icon="star"
+                winner={starWinner}
+              />
+              <WinnerCard
+                title="Vendor of the Month"
+                icon="trophy"
+                winner={vendorWinner}
+              />
             </motion.div>
-          </div>
-        </section>
-      )}
+          ) : (
+            /* Voting Cards */
+            <motion.div 
+              className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.5 }}
+            >
+              <VotingCard
+                title="Star of the Month"
+                subtitle="Celebrate outstanding team members"
+                icon="star"
+                candidates={starCandidates}
+                onVote={handleStarVote}
+                isVoting={isVotingStar}
+                votedFor={votedStar}
+              />
 
-      {/* Voting Categories or Winners - only show after voting starts */}
-      {votingStarted && (
-        <section className="px-4 pb-16">
-          <div className="container mx-auto">
-            {votingEnded ? (
-              /* Winners Display */
-              <motion.div 
-                className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.5 }}
-              >
-                <WinnerCard
-                  title="Star of the Month"
-                  icon="star"
-                  winner={starWinner}
-                />
-                <WinnerCard
-                  title="Vendor of the Month"
-                  icon="trophy"
-                  winner={vendorWinner}
-                />
-              </motion.div>
-            ) : (
-              /* Voting Cards */
-              <motion.div 
-                className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.5 }}
-              >
-                <VotingCard
-                  title="Star of the Month"
-                  subtitle="Celebrate outstanding team members"
-                  icon="star"
-                  candidates={starCandidates}
-                  onVote={handleStarVote}
-                  isVoting={isVotingStar}
-                  votedFor={votedStar}
-                />
-
-                <VotingCard
-                  title="Vendor of the Month"
-                  subtitle="Recognize our best partners"
-                  icon="trophy"
-                  candidates={vendorCandidates}
-                  onVote={handleVendorVote}
-                  isVoting={isVotingVendor}
-                  votedFor={votedVendor}
-                />
-              </motion.div>
-            )}
-          </div>
-        </section>
-      )}
+              <VotingCard
+                title="Vendor of the Month"
+                subtitle="Recognize our best partners"
+                icon="trophy"
+                candidates={vendorCandidates}
+                onVote={handleVendorVote}
+                isVoting={isVotingVendor}
+                votedFor={votedVendor}
+              />
+            </motion.div>
+          )}
+        </div>
+      </section>
 
       {/* Footer */}
       <motion.footer 
