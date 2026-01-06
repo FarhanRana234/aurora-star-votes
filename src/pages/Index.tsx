@@ -12,8 +12,9 @@ import {
   Candidate 
 } from "@/lib/firebase";
 
-// Voting ends at the end of January 10, 2026
-const VOTING_END_DATE = new Date("2026-01-10T23:59:59");
+// Voting period: Jan 10, 2026 1:00 AM to Jan 11, 2026 1:00 AM
+const VOTING_START_DATE = new Date("2026-01-10T01:00:00");
+const VOTING_END_DATE = new Date("2026-01-11T01:00:00");
 
 const Index = () => {
   const [starCandidates, setStarCandidates] = useState<Candidate[]>([]);
@@ -23,11 +24,16 @@ const Index = () => {
   const [votedStar, setVotedStar] = useState<string | null>(null);
   const [votedVendor, setVotedVendor] = useState<string | null>(null);
   const [votingEnded, setVotingEnded] = useState(false);
+  const [votingStarted, setVotingStarted] = useState(false);
 
-  // Check if voting has already ended
+  // Check voting status
   useEffect(() => {
-    if (new Date() >= VOTING_END_DATE) {
+    const now = new Date();
+    if (now >= VOTING_END_DATE) {
       setVotingEnded(true);
+      setVotingStarted(true);
+    } else if (now >= VOTING_START_DATE) {
+      setVotingStarted(true);
     }
   }, []);
 
@@ -66,6 +72,10 @@ const Index = () => {
   }, [vendorCandidates]);
 
   const handleStarVote = async (candidateId: string) => {
+    if (!votingStarted) {
+      toast.error("Voting hasn't started yet!");
+      return;
+    }
     if (votingEnded) {
       toast.error("Voting has ended!");
       return;
@@ -94,6 +104,10 @@ const Index = () => {
   };
 
   const handleVendorVote = async (candidateId: string) => {
+    if (!votingStarted) {
+      toast.error("Voting hasn't started yet!");
+      return;
+    }
     if (votingEnded) {
       toast.error("Voting has ended!");
       return;
@@ -125,6 +139,10 @@ const Index = () => {
     setVotingEnded(true);
   };
 
+  const handleVotingStart = () => {
+    setVotingStarted(true);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -144,6 +162,8 @@ const Index = () => {
         >
           {votingEnded ? (
             <>And The <span className="text-gold-gradient">Winners</span> Are...</>
+          ) : !votingStarted ? (
+            <>Voting <span className="text-gold-gradient">Coming Soon</span></>
           ) : (
             <>Cast Your <span className="text-gold-gradient">Vote</span></>
           )}
@@ -156,12 +176,18 @@ const Index = () => {
         >
           {votingEnded 
             ? "Thank you for participating! Here are the winners of this month's awards."
+            : !votingStarted
+            ? "The voting period will begin soon. Get ready to recognize excellence in our community!"
             : "Recognize excellence in our community. Vote for your Star of the Month and Vendor of the Month to celebrate outstanding achievements."
           }
         </motion.p>
 
         {/* Countdown Timer */}
-        <Countdown targetDate={VOTING_END_DATE} onComplete={handleVotingComplete} />
+        {!votingStarted ? (
+          <Countdown targetDate={VOTING_START_DATE} onComplete={handleVotingStart} />
+        ) : (
+          <Countdown targetDate={VOTING_END_DATE} onComplete={handleVotingComplete} />
+        )}
       </motion.section>
 
       {/* Voting Categories or Winners */}
