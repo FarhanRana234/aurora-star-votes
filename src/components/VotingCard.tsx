@@ -28,8 +28,6 @@ const VotingCard = ({
 
   const IconComponent = icon === "star" ? Star : Trophy;
 
-  const totalVotes = candidates.reduce((sum, c) => sum + (c.votes || 0), 0);
-
   return (
     <motion.div
       className="bg-card rounded-2xl shadow-card border border-border/50 overflow-hidden"
@@ -61,9 +59,6 @@ const VotingCard = ({
           </p>
         ) : (
           candidates.map((candidate, index) => {
-            const votePercentage = totalVotes > 0 
-              ? Math.round(((candidate.votes || 0) / totalVotes) * 100) 
-              : 0;
             const hasVoted = votedFor === candidate.id;
 
             return (
@@ -83,14 +78,6 @@ const VotingCard = ({
                 onMouseEnter={() => setHoveredCandidate(candidate.id)}
                 onMouseLeave={() => setHoveredCandidate(null)}
               >
-                {/* Progress bar background */}
-                <motion.div
-                  className="absolute inset-0 rounded-xl bg-gold/10 origin-left"
-                  initial={{ scaleX: 0 }}
-                  animate={{ scaleX: votePercentage / 100 }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
-                />
-
                 <div className="relative flex items-center justify-between gap-4">
                   {/* Candidate Image */}
                   {candidate.image && (
@@ -105,14 +92,11 @@ const VotingCard = ({
                     <h3 className="font-display font-semibold text-lg text-foreground">
                       {candidate.name}
                     </h3>
-                    <p className="text-xs text-gold mt-1 font-medium">
-                      {candidate.votes || 0} votes ({votePercentage}%)
-                    </p>
                   </div>
 
                   <Button
                     onClick={() => onVote(candidate.id)}
-                    disabled={isVoting || hasVoted}
+                    disabled={isVoting}
                     className={cn(
                       "min-w-[100px] transition-all duration-300",
                       hasVoted && "animate-vote-pop"
