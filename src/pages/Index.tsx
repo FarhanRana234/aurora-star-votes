@@ -7,13 +7,12 @@ import Countdown from "@/components/Countdown";
 import WinnerCard from "@/components/WinnerCard";
 import { 
   castVote, 
-  removeVote,
   subscribeToCandidates,
   Candidate 
 } from "@/lib/firebase";
 
-// Voting ends at the end of January 10, 2026
-const VOTING_END_DATE = new Date("2026-01-10T23:59:59");
+// Voting ends at the end of January 15, 2026
+const VOTING_END_DATE = new Date("2026-01-15T23:59:59");
 
 const Index = () => {
   const [starCandidates, setStarCandidates] = useState<Candidate[]>([]);
@@ -72,12 +71,6 @@ const Index = () => {
     }
     
     setIsVotingStar(true);
-    
-    // If switching vote, remove previous vote first
-    if (votedStar && votedStar !== candidateId) {
-      await removeVote(votedStar);
-    }
-    
     const success = await castVote(candidateId);
     
     if (success) {
@@ -100,12 +93,6 @@ const Index = () => {
     }
     
     setIsVotingVendor(true);
-    
-    // If switching vote, remove previous vote first
-    if (votedVendor && votedVendor !== candidateId) {
-      await removeVote(votedVendor);
-    }
-    
     const success = await castVote(candidateId);
     
     if (success) {

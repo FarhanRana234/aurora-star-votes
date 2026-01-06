@@ -58,48 +58,6 @@ export const castVote = async (candidateId: string): Promise<boolean> => {
   }
 };
 
-// Remove vote from a candidate (for vote switching)
-export const removeVote = async (candidateId: string): Promise<boolean> => {
-  try {
-    const candidateRef = doc(db, 'candidates', candidateId);
-    await updateDoc(candidateRef, {
-      votes: increment(-1)
-    });
-    return true;
-  } catch (error) {
-    console.error('Error removing vote:', error);
-    return false;
-  }
-};
-
-// Reset votes for a candidate (admin)
-export const resetVotes = async (candidateId: string): Promise<boolean> => {
-  try {
-    const candidateRef = doc(db, 'candidates', candidateId);
-    await updateDoc(candidateRef, {
-      votes: 0
-    });
-    return true;
-  } catch (error) {
-    console.error('Error resetting votes:', error);
-    return false;
-  }
-};
-
-// Set specific vote count (admin)
-export const setVotes = async (candidateId: string, votes: number): Promise<boolean> => {
-  try {
-    const candidateRef = doc(db, 'candidates', candidateId);
-    await updateDoc(candidateRef, {
-      votes: votes
-    });
-    return true;
-  } catch (error) {
-    console.error('Error setting votes:', error);
-    return false;
-  }
-};
-
 // Subscribe to candidates by type for real-time updates
 export const subscribeToCandidates = (
   type: string,
@@ -114,21 +72,6 @@ export const subscribeToCandidates = (
         ...doc.data()
       } as Candidate))
       .filter(c => c.type === type);
-    callback(candidates);
-  });
-};
-
-// Subscribe to all candidates for admin panel
-export const subscribeToAllCandidates = (
-  callback: (candidates: Candidate[]) => void
-): (() => void) => {
-  const candidatesRef = collection(db, 'candidates');
-  
-  return onSnapshot(candidatesRef, (snapshot) => {
-    const candidates = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as Candidate));
     callback(candidates);
   });
 };
